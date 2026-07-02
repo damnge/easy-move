@@ -82,8 +82,8 @@
       --ink-10:  rgba(26,30,44,0.07);
       --blue:    #2E86C1;
       --blue-lt: #E8F3FB;
-      --stone:   #F9F8F6;
-      --stone-2: #F0EEE9;
+      --stone:   #FBFAF8;
+      --stone-2: #F5F3EF;
       --white:   #FFFFFF;
       --border:  rgba(26,30,44,0.10);
 
@@ -546,12 +546,25 @@
     }
     .cab-content-cta:hover { gap: 10px; }
 
+    /* inline accordion panels — hidden everywhere by default, shown only on mobile when open */
+    .cab-inline-panel { display: none; }
+
     @media (max-width: 900px) {
       .svc-header { grid-template-columns: 1fr; gap: 24px; }
       .cabinet { grid-template-columns: 1fr; min-height: auto; }
-      .cabinet-tabs { border-right: none; border-bottom: 1px solid var(--border); }
-      .cabinet-panel { min-height: 260px; position: relative; }
-      .cab-content { position: absolute; padding: 28px 24px; }
+      .cabinet-tabs { border-right: none; }
+      .cabinet-panel { display: none; }
+      /* mobile accordion panels injected by JS */
+      .cab-inline-panel {
+        background: var(--white);
+        padding: 22px 20px 26px;
+        border-bottom: 1px solid var(--border);
+      }
+      .cab-inline-panel.open { display: block; }
+      .cab-inline-panel .cab-content-num { font-size: 0.68rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-60); margin-bottom: 10px; }
+      .cab-inline-panel h3 { font-family: var(--serif); font-size: 1.05rem; font-weight: 500; color: var(--ink); margin-bottom: 10px; letter-spacing: -0.01em; }
+      .cab-inline-panel p { font-size: 0.88rem; color: var(--ink-60); line-height: 1.7; margin-bottom: 16px; max-width: none; }
+      .cab-inline-panel .cab-content-cta { font-size: 0.78rem; font-weight: 500; color: var(--blue); text-decoration: none; display: flex; align-items: center; gap: 6px; letter-spacing: 0.04em; }
     }
 
     /* keep old svc-row styles for nothing (legacy cleanup) */
@@ -1132,14 +1145,14 @@
 
       <!-- right: headline + body -->
       <div class="reveal">
-        <h2 class="display" data-pl="Znamy ten proces od <em>środka</em>" data-en="We know this process from the <em>inside</em>">
-          Znamy ten proces<br class="mob-br"> od <em>środka</em>
+        <h2 class="display" data-pl="Twoja sprawa w <em>dobrych rękach</em>" data-en="Your case in <em>good hands</em>">
+          Twoja sprawa<br class="mob-br"> w <em>dobrych rękach</em>
         </h2>
         <div class="about-body-text">
           <p class="body-text"
-             data-pl="Easy Move powstało z pasji do pomagania ludziom, którzy przeprowadzają się do Polski. Nasz właściciel, Marcin Czaja, przez lata pracował bezpośrednio w Urzędzie Wojewódzkim — zna procedury od środka, wie czego szukają urzędnicy i jak unikać błędów kosztujących miesiące oczekiwania."
-             data-en="Easy Move was born from a genuine passion for helping people who move to Poland. Our founder Marcin Czaja spent years working directly inside the Provincial Office — he knows procedures from the inside, understands what officials look for, and how to avoid the mistakes that cost months of waiting.">
-            Easy Move powstało z pasji do pomagania ludziom, którzy przeprowadzają się do Polski. Nasz właściciel, Marcin Czaja, przez lata pracował bezpośrednio w Urzędzie Wojewódzkim — zna procedury od środka, wie czego szukają urzędnicy i jak unikać błędów kosztujących miesiące oczekiwania.
+             data-pl="Easy Move powstało z pasji do pomagania ludziom, którzy przeprowadzają się do Polski. Nasz właściciel, Marcin Czaja, przez lata pracował bezpośrednio w Urzędzie Wojewódzkim — wie, czego szukają urzędnicy, jak myślą i jak unikać błędów kosztujących miesiące oczekiwania."
+             data-en="Easy Move was born from a genuine passion for helping people who move to Poland. Our founder Marcin Czaja spent years working directly inside the Provincial Office — he understands how officials think, what they look for, and how to avoid the mistakes that cost months of waiting.">
+            Easy Move powstało z pasji do pomagania ludziom, którzy przeprowadzają się do Polski. Nasz właściciel, Marcin Czaja, przez lata pracował bezpośrednio w Urzędzie Wojewódzkim — wie, czego szukają urzędnicy, jak myślą i jak unikać błędów kosztujących miesiące oczekiwania.
           </p>
           <p class="body-text"
              data-pl="Oferujemy kompleksową pomoc: od analizy Twojej sytuacji przez kompletowanie dokumentów, po wspólną wizytę w urzędzie. Każda sprawa traktowana jest indywidualnie."
@@ -1744,15 +1757,48 @@
     const tabs     = document.querySelectorAll('.cab-tab');
     const contents = document.querySelectorAll('.cab-content');
     if (!tabs.length) return;
-    function activate(i) {
+
+    const isMob = () => window.innerWidth <= 900;
+
+    // Desktop: hover/click activates side panel
+    function activateDesktop(i) {
       tabs.forEach(t => t.classList.remove('active'));
       contents.forEach(c => c.classList.remove('active'));
       tabs[i].classList.add('active');
       contents[i].classList.add('active');
     }
+
+    // Mobile: inject inline accordion panels directly after each tab
+    const inlinePanels = [];
     tabs.forEach((tab, i) => {
-      tab.addEventListener('mouseenter', () => activate(i));
-      tab.addEventListener('click',      () => activate(i));
+      const panel = document.createElement('div');
+      panel.className = 'cab-inline-panel';
+      panel.innerHTML = contents[i].innerHTML;
+      tab.after(panel);
+      inlinePanels.push(panel);
+    });
+
+    // Open first panel by default on mobile
+    if (isMob()) {
+      inlinePanels[0].classList.add('open');
+      tabs[0].classList.add('active');
+    }
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('mouseenter', () => { if (!isMob()) activateDesktop(i); });
+      tab.addEventListener('click', () => {
+        if (isMob()) {
+          const isOpen = inlinePanels[i].classList.contains('open');
+          inlinePanels.forEach(p => p.classList.remove('open'));
+          tabs.forEach(t => t.classList.remove('active'));
+          if (!isOpen) {
+            inlinePanels[i].classList.add('open');
+            tab.classList.add('active');
+          }
+        } else {
+          activateDesktop(i);
+        }
+      });
     });
   })();
 
@@ -1799,20 +1845,35 @@
   (function() {
     const track = document.querySelector('.proc-track');
     const dots  = document.querySelectorAll('.proc-dot');
+    const steps = document.querySelectorAll('.proc-step');
     if (!dots.length) return;
-    let fired = false;
-    const dotObs = new IntersectionObserver(entries => {
-      if (fired || !entries[0].isIntersecting) return;
-      fired = true;
-      // start line sweep immediately
-      track.classList.add('line-go');
-      // light up dots with delay
-      dots.forEach((dot, i) => {
-        setTimeout(() => dot.classList.add('lit'), i * 480);
-      });
-      dotObs.disconnect();
-    }, { threshold: 0.4 });
-    dotObs.observe(document.getElementById('process'));
+
+    if (window.innerWidth <= 900) {
+      // Mobile: observe each step individually — fire as each one scrolls into view
+      const stepObs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            const dot = e.target.querySelector('.proc-dot');
+            if (dot) dot.classList.add('lit');
+            stepObs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.55, rootMargin: '0px 0px -10% 0px' });
+      steps.forEach(s => stepObs.observe(s));
+    } else {
+      // Desktop: sweep line + light all dots in sequence when section enters view
+      let fired = false;
+      const dotObs = new IntersectionObserver(entries => {
+        if (fired || !entries[0].isIntersecting) return;
+        fired = true;
+        track.classList.add('line-go');
+        dots.forEach((dot, i) => {
+          setTimeout(() => dot.classList.add('lit'), i * 480);
+        });
+        dotObs.disconnect();
+      }, { threshold: 0.4 });
+      dotObs.observe(document.getElementById('process'));
+    }
   })();
 
   /* ── Back to top visibility ───────────────────── */
