@@ -2459,14 +2459,18 @@
     e.preventDefault();
     const form = e.target;
     const btn = document.getElementById('submit-btn');
-    const data = new FormData(form);
+
+    const payload = new URLSearchParams();
+    payload.append('form-name', 'contact');
+    new FormData(form).forEach((val, key) => payload.append(key, val));
 
     fetch('/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(data).toString()
+      body: payload.toString()
     })
-    .then(() => {
+    .then(res => {
+      if (!res.ok) throw new Error(res.status);
       btn.querySelector('span').textContent = currentLang === 'pl' ? '✓ Wysłano — odezwiemy się wkrótce' : '✓ Sent — we\'ll be in touch soon';
       const svg = btn.querySelector('svg');
       if (svg) svg.remove();
@@ -2474,7 +2478,8 @@
       btn.disabled = true;
       form.reset();
     })
-    .catch(() => {
+    .catch(err => {
+      console.error('Form error:', err);
       btn.querySelector('span').textContent = currentLang === 'pl' ? 'Błąd — spróbuj ponownie' : 'Error — please try again';
     });
   }
