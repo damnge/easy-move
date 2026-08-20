@@ -2385,14 +2385,41 @@
   }
 
   /* ── Scroll reveal ────────────────────────────── */
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); obs.unobserve(e.target); } });
-  }, { threshold: 0, rootMargin: '0px' });
-  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-  // Hard fallback: if IO doesn't fire within 400ms, reveal everything
-  setTimeout(() => {
-    document.querySelectorAll('.reveal:not(.on)').forEach(el => el.classList.add('on'));
-  }, 400);
+  (function() {
+    // Add reveal only to top-level section containers not already inside a .reveal
+    const targets = [
+      '#offers .offer-col',
+      '#process .proc-step',
+      '#testimonials .testi-header',
+      '#testimonials .quote-slide',
+      '#team .team-member',
+      '#contact .contact-info',
+      '#contact .contact-form-box',
+      '#services .cab-layout',
+    ];
+
+    targets.forEach(sel => {
+      document.querySelectorAll(sel).forEach((el, i) => {
+        if (!el.closest('.reveal') && !el.classList.contains('reveal')) {
+          el.classList.add('reveal');
+          if (i > 0) el.style.transitionDelay = Math.min(i * 0.1, 0.3) + 's';
+        }
+      });
+    });
+
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('on'); obs.unobserve(e.target); }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+    // Hero reveals immediately — no delay
+    document.querySelectorAll('#hero .reveal').forEach(el => el.classList.add('on'));
+
+    setTimeout(() => {
+      document.querySelectorAll('.reveal:not(.on)').forEach(el => obs.observe(el));
+    }, 600);
+  })();
 
   /* ── Nav active section highlight ────────────── */
   (function() {
