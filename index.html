@@ -2457,11 +2457,26 @@
   /* ── Form ─────────────────────────────────────── */
   function handleSubmit(e) {
     e.preventDefault();
+    const form = e.target;
     const btn = document.getElementById('submit-btn');
-    btn.querySelector('span').textContent = currentLang === 'pl' ? '✓ Wysłano — odezwiemy się wkrótce' : '✓ Sent — we\'ll be in touch soon';
-    btn.querySelector('svg').remove();
-    btn.style.background = '#2E86C1';
-    btn.disabled = true;
+    const data = new FormData(form);
+
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(data).toString()
+    })
+    .then(() => {
+      btn.querySelector('span').textContent = currentLang === 'pl' ? '✓ Wysłano — odezwiemy się wkrótce' : '✓ Sent — we\'ll be in touch soon';
+      const svg = btn.querySelector('svg');
+      if (svg) svg.remove();
+      btn.style.background = '#2E86C1';
+      btn.disabled = true;
+      form.reset();
+    })
+    .catch(() => {
+      btn.querySelector('span').textContent = currentLang === 'pl' ? 'Błąd — spróbuj ponownie' : 'Error — please try again';
+    });
   }
 
   /* ── Testimonials carousel ────────────────────────── */
